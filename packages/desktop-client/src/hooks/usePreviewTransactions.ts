@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { send } from 'loot-core/platform/client/connection';
 import { computeSchedulePreviewTransactions } from 'loot-core/shared/schedules';
@@ -49,12 +49,6 @@ export function usePreviewTransactions({
   const [error, setError] = useState<Error | undefined>(undefined);
 
   const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
-
-  // We don't want to re-render if options changes.
-  // Putting options in a ref will prevent that and
-  // allow us to use the latest options on next render.
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
 
   const scheduleTransactions = useMemo(() => {
     if (isSchedulesLoading) {
