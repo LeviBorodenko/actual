@@ -47,9 +47,6 @@ export function usePreviewTransactions({
   } = useCachedSchedules();
   const [isLoading, setIsLoading] = useState(isSchedulesLoading);
   const [error, setError] = useState<Error | undefined>(undefined);
-  const [runningBalances, setRunningBalances] = useState<
-    Map<TransactionEntity['id'], IntegerAmount>
-  >(new Map());
 
   const [upcomingLength] = useSyncedPref('upcomingScheduledTransactionLength');
 
@@ -109,21 +106,6 @@ export function usePreviewTransactions({
           const ungroupedTransactions = ungroupTransactions(withDefaults);
           setPreviewTransactions(ungroupedTransactions);
 
-          if (optionsRef.current?.calculateRunningBalances) {
-            setRunningBalances(
-              // We always use the bottom up calculation for preview transactions
-              // because the hook controls the order of the transactions. We don't
-              // need to provide a custom way for consumers to calculate the running
-              // balances, at least as of writing.
-              calculateRunningBalancesBottomUp(
-                ungroupedTransactions,
-                // Preview transactions are behaves like 'all' splits
-                'all',
-                optionsRef.current?.startingBalance,
-              ),
-            );
-          }
-
           setIsLoading(false);
         }
       })
@@ -138,6 +120,24 @@ export function usePreviewTransactions({
       isUnmounted = true;
     };
   }, [scheduleTransactions, schedules, statuses, upcomingLength]);
+
+  const runningBalances = useMemo(() => {
+    if (!options?.calculateRunningBalances) {
+      return new Map<TransactionEntity['id'], IntegerAmount>();
+    }
+
+    // We always use the bottom up calculation for preview transactions
+    // because the hook controls the order of the transactions.
+    return calculateRunningBalancesBottomUp(
+      previewTransactions,
+      'all',
+      options?.startingBalance,
+    );
+  }, [
+    previewTransactions,
+    options?.calculateRunningBalances,
+    options?.startingBalance,
+  ]);
 
   const returnError = error || scheduleQueryError;
   return {
